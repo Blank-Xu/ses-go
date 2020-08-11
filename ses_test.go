@@ -5,14 +5,14 @@ import (
 )
 
 const (
-	tEndpoint        = "endpoint"
-	tFrom            = "from"
-	tAccessKeyId     = "accessKeyId"
-	tSecretAccessKey = "secretAccessKey"
+	endpoint        = "endpoint"
+	from            = "from"
+	accessKeyID     = "accessKeyID"
+	secretAccessKey = "secretAccessKey"
 
-	tSubject  = "SES-Mail Subject"
-	tBodyText = "SES-Mail body"
-	tBodyHtml = `<!DOCTYPE html>
+	subject  = "SES-Mail Subject"
+	bodyText = "SES-Mail body"
+	bodyHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -24,23 +24,20 @@ SES-Mail body
 </html>`
 )
 
-var tToAddresses = []string{"test1@aws.com", "test2@aws.com"}
+var toAddresses = []string{"test1@aws.com", "test2@aws.com"}
 
 func TestSendMail(t *testing.T) {
-	api := NewApi(tEndpoint,
-		tFrom,
-		tAccessKeyId,
-		tSecretAccessKey)
+	api := NewAPI(endpoint, from, accessKeyID, secretAccessKey)
 
-	body, err := api.SendMail(tSubject, tBodyText, tToAddresses)
+	body, err := api.SendMail(subject, bodyText, toAddresses)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	body, err = api.SendHtmlMail(tSubject, tBodyHtml, tToAddresses)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	t.Log(body)
+
+	body2, err := api.SendHTMLMail(subject, bodyHTML, toAddresses)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(body2)
 }
