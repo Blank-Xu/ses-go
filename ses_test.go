@@ -26,18 +26,22 @@ SES-Mail body
 
 var toAddresses = []string{"test1@aws.com", "test2@aws.com"}
 
-func TestSendMail(t *testing.T) {
+func Test_SendMail(t *testing.T) {
 	api := NewAPI(endpoint, from, accessKeyID, secretAccessKey)
 
 	body, err := api.SendMail(subject, bodyText, toAddresses)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("send text mail failed, err: %s", err.Error())
 	}
-	t.Log(body)
+	t.Logf("send text email response: %s\n", body)
+}
 
-	body2, err := api.SendHTMLMail(subject, bodyHTML, toAddresses)
+func Test_SendHTMLMail(t *testing.T) {
+	api := NewAPI(endpoint, from, accessKeyID, secretAccessKey)
+
+	body, err := api.SendHTMLMail(subject, bodyHTML, toAddresses)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("send html mail failed, err: %s", err.Error())
 	}
-	t.Log(body2)
+	t.Logf("send html email response: %s\n", body)
 }

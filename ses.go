@@ -27,7 +27,19 @@ func NewAPI(endpoint, from, accessKeyID, secretAccessKey string) *Option {
 	return op
 }
 
-var defaultClient = http.Client{
+// NewHTTPClientAPI  constructor for SES api with given HTTP client
+func NewHTTPClientAPI(client http.Client, endpoint, from, accessKeyID, secretAccessKey string) *Option {
+	SetDefaultHTTPClient(client)
+
+	return NewAPI(endpoint, from, accessKeyID, secretAccessKey)
+}
+
+// SetDefaultHTTPClient  set the default http client for this package
+func SetDefaultHTTPClient(client http.Client) {
+	defaultHTTPClient = client
+}
+
+var defaultHTTPClient = http.Client{
 	Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
@@ -46,9 +58,6 @@ type Option struct {
 
 // SendMail  send text emails
 func (p *Option) SendMail(subject, bodyText string, toAddresses []string) (string, error) {
-	// subject = fmt.Sprintf("=?UTF-8?B?%s?=",
-	// 	base64.StdEncoding.EncodeToString([]byte(subject)))
-
 	b := make([]byte, base64.StdEncoding.EncodedLen(len(subject)))
 	base64.StdEncoding.Encode(b, []byte(subject))
 
@@ -59,7 +68,7 @@ func (p *Option) SendMail(subject, bodyText string, toAddresses []string) (strin
 	subBuf.Write(b)
 	subBuf.WriteString("?=")
 
-	data := make(url.Values, 5+len(toAddresses))
+	data := make(url.Values, 6+len(toAddresses))
 	data.Add("Action", "SendEmail")
 	data.Add("Source", p.source)
 	data.Add("Message.Subject.Data", subBuf.String())
@@ -77,9 +86,6 @@ func (p *Option) SendMail(subject, bodyText string, toAddresses []string) (strin
 
 // SendHTMLMail  send html emails
 func (p *Option) SendHTMLMail(subject, bodyHTML string, toAddresses []string) (string, error) {
-	// subject = fmt.Sprintf("=?UTF-8?B?%s?=",
-	// 	base64.StdEncoding.EncodeToString([]byte(subject)))
-
 	b := make([]byte, base64.StdEncoding.EncodedLen(len(subject)))
 	base64.StdEncoding.Encode(b, []byte(subject))
 
@@ -90,7 +96,7 @@ func (p *Option) SendHTMLMail(subject, bodyHTML string, toAddresses []string) (s
 	subBuf.Write(b)
 	subBuf.WriteString("?=")
 
-	data := make(url.Values, 5+len(toAddresses))
+	data := make(url.Values, 6+len(toAddresses))
 	data.Add("Action", "SendEmail")
 	data.Add("Source", p.source)
 	data.Add("Message.Subject.Data", subject)
@@ -127,11 +133,11 @@ func (p *Option) doRequest(data url.Values) ([]byte, error) {
 	// calculate signature
 	h := hmac.New(sha256.New, p.secretAccessKey)
 	_, _ = h.Write([]byte(date))
+
 	signature := make([]byte, base64.StdEncoding.EncodedLen(h.Size()))
 	base64.StdEncoding.Encode(signature, h.Sum(nil))
 
 	// calculate Authorization
-	// fmt.Sprintf("AWS3-HTTPS AWSAccessKeyId=%s, Algorithm=HmacSHA256, Signature=%s", "", "")
 	var authorizationBuf bytes.Buffer
 
 	authorizationBuf.Grow(128)
@@ -143,9 +149,9 @@ func (p *Option) doRequest(data url.Values) ([]byte, error) {
 	// set Header X-Amzn-Authorization
 	request.Header.Set("X-Amzn-Authorization", authorizationBuf.String())
 
-	resp, err := defaultClient.Do(request)
+	resp, err := defaultHTTPClient.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("http request failed, err: %v", err)
+		return nil, fmt.Errorf("http request failed, err: %s", err.Error())
 	}
 	defer resp.Body.Close()
 
